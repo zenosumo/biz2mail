@@ -43,7 +43,7 @@ source venv/bin/activate
 With the virtual environment activated, install the required packages using `pip`:
 
 \`\`\`bash
-pip install pandas openpyxl
+pip install pandas openpyxl xlrd
 \`\`\`
 
 ### Step 5: Deactivate the Virtual Environment
