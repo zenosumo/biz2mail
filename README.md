@@ -1,8 +1,6 @@
 
 # Excel to CSV Extractor
 
-## Description
-
 ### Purpose
 The "Excel to CSV Extractor" is a Python-based tool designed to extract specific columns from an Excel file and save the data into a CSV file. This tool is particularly useful for users who need to transform large datasets from Excel format to a more versatile CSV format with custom separators.
 
@@ -28,14 +26,14 @@ Open your terminal or command prompt and execute the following commands:
 cd /path/to/your/project
 
 # Create a virtual environment
-python -m venv venv
+python -m venv bizenv
 
 # Activate the virtual environment
 # On Windows
-venv\Scripts\activate
+bizenv\Scripts\activate
 
 # On Unix or MacOS
-source venv/bin/activate
+source bizenv/bin/activate
 ```
 
 ### Step 4: Install Required Packages
@@ -43,7 +41,7 @@ source venv/bin/activate
 With the virtual environment activated, install the required packages using `pip`:
 
 ```shell
-pip install pandas openpyxl xlrd
+pip install pandas openpyxl xlrd requests beautifulsoup4
 ```
 
 ### Step 5: Deactivate the Virtual Environment

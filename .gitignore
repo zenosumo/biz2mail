@@ -140,3 +140,4 @@ dmypy.json
 *.xls*
 *.csv
 *.tsv
+*.log
