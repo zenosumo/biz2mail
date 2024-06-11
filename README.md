@@ -15,25 +15,27 @@ The script ensures robust error handling for missing files, columns, and web scr
 
 ### Prerequisites
 - Python installed on your system.
-- ChromeDriver executable for Selenium-based web scraping.
+- ChromeDriver executable for Selenium-based web scraping. Download it [here](https://googlechromelabs.github.io/chrome-for-testing).
 
 ### Setup Instructions
 
 1. **Install Python**: Download from the [official Python website](https://www.python.org/downloads/).
 
-2. **Set Up Virtual Environment**:
+2. **Download ChromeDriver**: Ensure you have the ChromeDriver which matches your Chrome version. Download it from [Chrome Labs](https://googlechromelabs.github.io/chrome-for-testing).
+
+3. **Set Up Virtual Environment**:
    ```shell
    python -m venv bizenv
    source bizenv/bin/activate  # Unix/MacOS
    bizenv\Scripts\activate  # Windows
    ```
 
-3. **Install Required Packages**:
+4. **Install Required Packages**:
    ```shell
    pip install pandas openpyxl xlrd requests beautifulsoup4 selenium
    ```
 
-4. **Deactivate the Virtual Environment**:
+5. **Deactivate the Virtual Environment**:
    ```shell
    deactivate
    ```

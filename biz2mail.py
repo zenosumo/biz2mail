@@ -8,12 +8,20 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
+from duckduckgo_search import DDGS
+
+
+options = Options()
+options.add_argument("--headless")
+service = Service('/home/kris/bin/chromedriver')  # Use this if not in your PATH
+driver = webdriver.Chrome(service=service, options=options)
 
 # Define default values
 DEFAULT_EXCEL_FILE = "bizlist.xls"
 DEFAULT_COLUMN_VAT = "Codice Fiscale"
 DEFAULT_COLUMN_COMPANY = "Denominazione Azienda"
-DEFAULT_SEPARATOR = "|"
+DEFAULT_FIELD_SEPARATOR = "|"
+DEFAULT_URL_SEPARATOR = "^"
 CSV_FILE_NAME = "bizlist.csv"
 SCRIPT_NAME = os.path.splitext(os.path.basename(sys.argv[0]))[0]
 LOG_FILE_NAME = f"{SCRIPT_NAME}.log"
@@ -22,6 +30,16 @@ DEBUG_MODE = False  # Set to True to skip actual searches
 def get_user_input(prompt, default_value):
     user_input = input(f"{prompt} [{default_value}]: ")
     return user_input if user_input else default_value
+
+def duckduckgo_search(search_term):
+    try:
+        results = DDGS().text(search_term, max_results=1)
+        # Extract URLs from the results
+        urls = [result['href'] for result in results if 'href' in result]
+        return urls
+    except Exception as err:
+        print(f"An error occurred: {err}")
+        return []
 
 def step_1_generate_csv(excel_file, column_vat, column_company):
     try:
@@ -42,86 +60,41 @@ def step_1_generate_csv(excel_file, column_vat, column_company):
         return False
 
     extracted_df = df[[column_vat, column_company]].copy()
-    extracted_df.loc[:, 'website'] = ""
-    extracted_df.loc[:, 'email'] = ""
-    extracted_df.loc[:, 'error'] = ""
+    extracted_df['website'] = ""
+    extracted_df['email'] = ""
+    extracted_df['error'] = ""
+
+    # Ensure the 'website' column is explicitly set to string type
+    extracted_df = extracted_df.astype({"website": str})
 
     try:
-        extracted_df.to_csv(CSV_FILE_NAME, sep=DEFAULT_SEPARATOR, index=False)
+        extracted_df.to_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR, index=False)
         print(f"CSV file created: {CSV_FILE_NAME}")
         return True
     except Exception as e:
         print(f"Error saving the CSV file: {e}")
         return False
 
-def get_website_from_duckduckgo(vat, company_name):
-    log_details = []
-
-    if DEBUG_MODE:
-        return f"http://example.com/{vat}/{company_name.replace(' ', '_')}"
-
-    query = f"{vat} {company_name}"
-    log_details.append(f"Performing search for query: {query}")
-
-    options = Options()
-    options.add_argument("--headless")
-    service = Service('/path/to/chromedriver')  # Update the path to chromedriver
-    driver = webdriver.Chrome(service=service, options=options)
-    
-    try:
-        driver.get("https://duckduckgo.com/")
-        search_box = driver.find_element(By.NAME, "q")
-        search_box.send_keys(query)
-        search_box.send_keys(Keys.RETURN)
-        time.sleep(2)  # Allow time for the results to load
-
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        results = soup.find_all('a', class_='result__a', href=True)
-
-        if not results:
-            log_details.append(f"No results found for query: {query}")
-            with open(LOG_FILE_NAME, 'a') as log_file:
-                log_file.write('\n'.join(log_details) + '\n')
-            return None
-
-        log_details.append(f"Found {len(results)} results for query: {query}:")
-        for result in results:
-            log_details.append(result['href'])
-
-        with open(LOG_FILE_NAME, 'a') as log_file:
-            log_file.write('\n'.join(log_details) + '\n')
-
-        return results[0]['href']
-    finally:
-        driver.quit()
-
 def step_2_populate_website():
     try:
-        df = pd.read_csv(CSV_FILE_NAME, sep=DEFAULT_SEPARATOR)
+        df = pd.read_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR)
+
+        # Ensure the 'website' column is explicitly set to string type
+        df['website'] = df['website'].astype(str)
+
+        for index, row in df.iterrows():
+            company_name = row[DEFAULT_COLUMN_COMPANY]
+            vat_code = row[DEFAULT_COLUMN_VAT]
+            search_term = f"{company_name} {vat_code}"
+            print(f"Searching for: {search_term}")
+            urls = duckduckgo_search(search_term)
+            df.at[index, 'website'] = DEFAULT_URL_SEPARATOR.join(urls)
+            time.sleep(1)  # Be polite and avoid being blocked
+
+        df.to_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR, index=False)
+        print(f"CSV file updated with websites: {CSV_FILE_NAME}")
     except Exception as e:
-        print(f"Error reading the CSV file: {e}")
-        return
-
-    # Ensure the website and error columns are of type string
-    df['website'] = df['website'].astype(str)
-    df['error'] = df['error'].astype(str)
-
-    # Populate the website column
-    for index, row in df.iterrows():
-        vat = row[DEFAULT_COLUMN_VAT]
-        company_name = row[DEFAULT_COLUMN_COMPANY]
-        print(f"Searching for company: {company_name}, VAT: {vat}")
-        website = get_website_from_duckduckgo(vat, company_name)
-        if website:
-            df.loc[index, 'website'] = website
-        else:
-            df.loc[index, 'error'] = "Website not found"
-
-    try:
-        df.to_csv(CSV_FILE_NAME, sep=DEFAULT_SEPARATOR, index=False)
-        print(f"CSV file updated: {CSV_FILE_NAME}")
-    except Exception as e:
-        print(f"Error saving the updated CSV file: {e}")
+        print(f"An error occurred during website population: {e}")
 
 def main():
     # Initialize log file
@@ -141,7 +114,7 @@ def main():
     else:
         print("CSV file already exists.")
         try:
-            df = pd.read_csv(CSV_FILE_NAME, sep=DEFAULT_SEPARATOR)
+            df = pd.read_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR)
             if df['website'].isnull().all() or (df['website'] == '').all():
                 input("No website data found. Press Enter to proceed to step 2.")
                 step_2_populate_website()
