@@ -23,7 +23,7 @@ To create and manage Python virtual environments, you can use `venv`, which is i
 
 Open your terminal or command prompt and execute the following commands:
 
-\`\`\`bash
+```shell
 # Navigate to your project directory
 cd /path/to/your/project
 
@@ -36,23 +36,23 @@ venv\Scripts\activate
 
 # On Unix or MacOS
 source venv/bin/activate
-\`\`\`
+```
 
 ### Step 4: Install Required Packages
 
 With the virtual environment activated, install the required packages using `pip`:
 
-\`\`\`bash
+```shell
 pip install pandas openpyxl xlrd
-\`\`\`
+```
 
 ### Step 5: Deactivate the Virtual Environment
 
 Once you are done using the virtual environment, you can deactivate it by running:
 
-\`\`\`bash
+```shell
 deactivate
-\`\`\`
+```
 
 ## Usage
 
@@ -67,9 +67,9 @@ deactivate
 
    With the virtual environment activated, you can run the script by navigating to the directory containing your script and executing:
 
-   \`\`\`bash
+   ```shell
    python biz2mail.py
-   \`\`\`
+   ```
 
 2. **Provide Inputs:**
 
@@ -77,10 +77,10 @@ deactivate
 
 ### Example Usage
 
-\`\`\`bash
+```shell
 Enter the path to the Excel file [bizlist.xls]: 
 Enter the name of the VAT column [Codice Fiscale]: 
 Enter the name of the Company column [Denominazione Azienda]:
-\`\`\`
+```
 
 If the file and columns are valid, the script will create a CSV file in the same directory as the Excel file, with the same name but a `.csv` extension.
