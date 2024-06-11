@@ -136,6 +136,7 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+*.xls
 *.xls*
 *.csv
 *.tsv
