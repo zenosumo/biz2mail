@@ -1,13 +1,9 @@
 import pandas as pd
 import os
+import requests
+from bs4 import BeautifulSoup
 import sys
 import time
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
-from bs4 import BeautifulSoup
 
 # Define default values
 DEFAULT_EXCEL_FILE = "bizlist.xls"
@@ -60,40 +56,37 @@ def get_website_from_duckduckgo(vat, company_name):
     if DEBUG_MODE:
         return f"http://example.com/{vat}/{company_name.replace(' ', '_')}"
 
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     query = f"{vat} {company_name}"
+    url = f"https://duckduckgo.com/html/?q={query}"
     log_details.append(f"Performing search for query: {query}")
+    response = requests.get(url, headers=headers)
+    log_details.append(f"Received status code: {response.status_code} for query: {query}")
 
-    options = Options()
-    options.add_argument("--headless")
-    service = Service('/path/to/chromedriver')  # Update the path to chromedriver
-    driver = webdriver.Chrome(service=service, options=options)
-    
-    try:
-        driver.get("https://duckduckgo.com/")
-        search_box = driver.find_element(By.NAME, "q")
-        search_box.send_keys(query)
-        search_box.send_keys(Keys.RETURN)
-        time.sleep(2)  # Allow time for the results to load
-
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        results = soup.find_all('a', class_='result__a', href=True)
-
-        if not results:
-            log_details.append(f"No results found for query: {query}")
-            with open(LOG_FILE_NAME, 'a') as log_file:
-                log_file.write('\n'.join(log_details) + '\n')
-            return None
-
-        log_details.append(f"Found {len(results)} results for query: {query}:")
-        for result in results:
-            log_details.append(result['href'])
-
+    if response.status_code != 200:
+        log_details.append(f"Error: Search request failed with status code {response.status_code} for query: {query}")
         with open(LOG_FILE_NAME, 'a') as log_file:
             log_file.write('\n'.join(log_details) + '\n')
+        return None
 
-        return results[0]['href']
-    finally:
-        driver.quit()
+    time.sleep(2)  # Add a delay to give time for the page to populate
+    soup = BeautifulSoup(response.text, 'html.parser')
+    results = soup.find_all('a', class_='result__a', href=True)
+
+    if not results:
+        log_details.append(f"No results found for query: {query}")
+        with open(LOG_FILE_NAME, 'a') as log_file:
+            log_file.write('\n'.join(log_details) + '\n')
+        return None
+
+    log_details.append(f"Found {len(results)} results for query: {query}:")
+    for result in results:
+        log_details.append(result['href'])
+
+    with open(LOG_FILE_NAME, 'a') as log_file:
+        log_file.write('\n'.join(log_details) + '\n')
+
+    return results[0]['href']
 
 def step_2_populate_website():
     try:

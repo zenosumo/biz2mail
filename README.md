@@ -41,7 +41,8 @@ source bizenv/bin/activate
 With the virtual environment activated, install the required packages using `pip`:
 
 ```shell
-pip install pandas openpyxl xlrd requests beautifulsoup4
+pip install pandas openpyxl xlrd requests beautifulsoup4 selenium
+
 ```
 
 ### Step 5: Deactivate the Virtual Environment
