@@ -1,85 +1,66 @@
 
-# Excel to CSV Extractor
+# Excel to CSV Extractor with Web Data Enhancement
 
 ### Purpose
-The "Excel to CSV Extractor" is a Python-based tool designed to extract specific columns from an Excel file and save the data into a CSV file. This tool is particularly useful for users who need to transform large datasets from Excel format to a more versatile CSV format with custom separators.
+The "Excel to CSV Extractor with Web Data Enhancement" is an enhanced Python-based tool designed not only to extract specific columns from an Excel file into a CSV file but also to enrich the CSV with web-scraped data such as websites and emails of the companies listed. This tool is ideal for users requiring comprehensive data assembly from various sources into a manageable format.
 
 ### How It Works
-The tool takes an Excel file as input, extracts two specified columns (by default, "Codice Fiscale" and "Denominazione Azienda"), and generates a CSV file with these columns. The resulting CSV file uses a custom separator (default is `|`). The script includes error handling for missing files and columns, ensuring a robust and user-friendly experience.
+The tool operates in two main steps:
+1. **CSV Generation**: Takes an Excel file as input, extracts specified columns (default: "Codice Fiscale" and "Denominazione Azienda"), and generates a CSV file.
+2. **Data Enrichment**: Uses web scraping to retrieve additional information like company websites and emails, appending this data to the CSV.
+
+The script ensures robust error handling for missing files, columns, and web scraping anomalies.
 
 ## Installation
 
-### Step 1: Install Python
+### Prerequisites
+- Python installed on your system.
+- ChromeDriver executable for Selenium-based web scraping.
 
-First, you need to have Python installed on your system. You can download the latest version of Python from the [official Python website](https://www.python.org/downloads/).
+### Setup Instructions
 
-### Step 2: Install Python Environment Extension
+1. **Install Python**: Download from the [official Python website](https://www.python.org/downloads/).
 
-To create and manage Python virtual environments, you can use `venv`, which is included in Python 3.3 and later.
+2. **Set Up Virtual Environment**:
+   ```shell
+   python -m venv bizenv
+   source bizenv/bin/activate  # Unix/MacOS
+   bizenv\Scripts\activate  # Windows
+   ```
 
-### Step 3: Create and Activate a Virtual Environment
+3. **Install Required Packages**:
+   ```shell
+   pip install pandas openpyxl xlrd requests beautifulsoup4 selenium
+   ```
 
-Open your terminal or command prompt and execute the following commands:
-
-```shell
-# Navigate to your project directory
-cd /path/to/your/project
-
-# Create a virtual environment
-python -m venv bizenv
-
-# Activate the virtual environment
-# On Windows
-bizenv\Scripts\activate
-
-# On Unix or MacOS
-source bizenv/bin/activate
-```
-
-### Step 4: Install Required Packages
-
-With the virtual environment activated, install the required packages using `pip`:
-
-```shell
-pip install pandas openpyxl xlrd requests beautifulsoup4 selenium
-
-```
-
-### Step 5: Deactivate the Virtual Environment
-
-Once you are done using the virtual environment, you can deactivate it by running:
-
-```shell
-deactivate
-```
+4. **Deactivate the Virtual Environment**:
+   ```shell
+   deactivate
+   ```
 
 ## Usage
 
 ### Inputs
-- **Excel File**: The path to the Excel file you want to process.
-- **VAT Column**: The name of the column containing VAT numbers (default: "Codice Fiscale").
-- **Company Column**: The name of the column containing company names (default: "Denominazione Azienda").
+- **Excel File**: Path to the Excel file.
+- **Columns**: Names of the VAT and company columns (default settings provided).
 
-### How to Run the Script
+### Running the Script
+Navigate to the script directory and execute:
+```shell
+python biz2mail.py
+```
 
-1. **Run the Script:**
-
-   With the virtual environment activated, you can run the script by navigating to the directory containing your script and executing:
-
-   ```shell
-   python biz2mail.py
-   ```
-
-2. **Provide Inputs:**
-
-   When prompted, provide the path to the Excel file and the column names. If you press Enter without typing anything, the script will use the default values.
+Follow the prompts to input the Excel file path and column names. The script will first generate a CSV file and then proceed to enrich it with websites and emails fetched online.
 
 ### Example Usage
-
 ```shell
 Enter the path to the Excel file [bizlist.xls]: 
 Enter the name of the VAT column [Codice Fiscale]: 
 Enter the name of the Company column [Denominazione Azienda]:
 ```
 
-If the file and columns are valid, the script will create a CSV file in the same directory as the Excel file, with the same name but a `.csv` extension.
+## Troubleshooting
+- Ensure all dependencies are correctly installed.
+- Verify that the ChromeDriver path is correctly set in the script.
+
+The detailed error logging in the script will assist in troubleshooting issues related to file reading and web scraping.
