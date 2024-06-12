@@ -5,9 +5,10 @@
 The "Excel to CSV Extractor with Web Data Enhancement" is an enhanced Python-based tool designed not only to extract specific columns from an Excel file into a CSV file but also to enrich the CSV with web-scraped data such as websites and emails of the companies listed. This tool is ideal for users requiring comprehensive data assembly from various sources into a manageable format.
 
 ### How It Works
-The tool operates in two main steps:
-1. **CSV Generation**: Takes an Excel file as input, extracts specified columns (default: "Codice Fiscale" and "Denominazione Azienda"), and generates a CSV file.
-2. **Data Enrichment**: Uses web scraping to retrieve additional information like company websites and emails, appending this data to the CSV.
+The tool operates in three main steps:
+1. **CSV Generation**: Takes an Excel file as input, extracts specified columns (default: "Codice Fiscale" and "Denominazione Azienda"), and generates a CSV file. These columns has to be unique.
+2. **Website Data Enrichment**: Uses DuckDuckGo search to retrieve the first three URLs related to the company and appends these URLs to the CSV.
+3. **Email Data Enrichment**: Extracts emails from the URLs and appends this data to the CSV.
 
 The script ensures robust error handling for missing files, columns, and web scraping anomalies.
 
@@ -15,27 +16,25 @@ The script ensures robust error handling for missing files, columns, and web scr
 
 ### Prerequisites
 - Python installed on your system.
-- ChromeDriver executable for Selenium-based web scraping. Download it [here](https://googlechromelabs.github.io/chrome-for-testing).
+- Required libraries: `pandas`, `openpyxl`, `xlrd`, `requests`, `duckduckgo_search`.
 
 ### Setup Instructions
 
 1. **Install Python**: Download from the [official Python website](https://www.python.org/downloads/).
 
-2. **Download ChromeDriver**: Ensure you have the ChromeDriver which matches your Chrome version. Download it from [Chrome Labs](https://googlechromelabs.github.io/chrome-for-testing).
-
-3. **Set Up Virtual Environment**:
+2. **Set Up Virtual Environment**:
    ```shell
    python -m venv bizenv
    source bizenv/bin/activate  # Unix/MacOS
    bizenv\Scripts\activate  # Windows
    ```
 
-4. **Install Required Packages**:
+3. **Install Required Packages**:
    ```shell
-   pip install pandas openpyxl xlrd requests beautifulsoup4 selenium
+   pip install pandas xlrd requests duckduckgo_search
    ```
 
-5. **Deactivate the Virtual Environment**:
+4. **Deactivate the Virtual Environment**:
    ```shell
    deactivate
    ```
@@ -63,6 +62,5 @@ Enter the name of the Company column [Denominazione Azienda]:
 
 ## Troubleshooting
 - Ensure all dependencies are correctly installed.
-- Verify that the ChromeDriver path is correctly set in the script.
 
 The detailed error logging in the script will assist in troubleshooting issues related to file reading and web scraping.

@@ -2,12 +2,14 @@ import pandas as pd
 import os
 import sys
 import time
+import re
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
-from bs4 import BeautifulSoup
 from duckduckgo_search import DDGS
 
 
@@ -33,12 +35,26 @@ def get_user_input(prompt, default_value):
 
 def duckduckgo_search(search_term):
     try:
-        results = DDGS().text(search_term, max_results=1)
+        results = DDGS().text(search_term, max_results=3)
         # Extract URLs from the results
         urls = [result['href'] for result in results if 'href' in result]
         return urls
     except Exception as err:
         print(f"An error occurred: {err}")
+        return []
+
+def extract_emails(url):
+    try:
+        response = requests.get(url, timeout=2)
+        if response.status_code == 200:
+            page_content = response.text
+            emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", page_content)
+            return emails
+        else:
+            print(f"Failed to retrieve the page: {url}")
+            return []
+    except (requests.RequestException, requests.Timeout) as e:
+        print(f"An error occurred while fetching the URL {url}: {e}")
         return []
 
 def step_1_generate_csv(excel_file, column_vat, column_company):
@@ -64,8 +80,8 @@ def step_1_generate_csv(excel_file, column_vat, column_company):
     extracted_df['email'] = ""
     extracted_df['error'] = ""
 
-    # Ensure the 'website' column is explicitly set to string type
-    extracted_df = extracted_df.astype({"website": str})
+    # Ensure the 'website', 'email', and 'error' columns are explicitly set to string type
+    extracted_df = extracted_df.astype({"website": str, "email": str, "error": str})
 
     try:
         extracted_df.to_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR, index=False)
@@ -100,6 +116,43 @@ def step_2_populate_website():
     except Exception as e:
         print(f"An error occurred during website population: {e}")
 
+def step_3_populate_email():
+    try:
+        df = pd.read_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR)
+
+        # Ensure the 'email' and 'error' columns are explicitly set to string type
+        df['email'] = df['email'].astype(str)
+        df['error'] = df['error'].astype(str)
+
+        total_records = len(df)
+        for index, row in df.iterrows():
+            if row['website']:
+                urls = row['website'].split(DEFAULT_URL_SEPARATOR)
+                all_emails = []
+                errors = []
+                for url in urls:
+                    emails = extract_emails(url)
+                    if emails:
+                        all_emails.extend(emails)
+                    else:
+                        errors.append(f"Timeout for {url}")
+
+                # Join found emails and errors or set to empty strings
+                df.at[index, 'email'] = DEFAULT_URL_SEPARATOR.join(all_emails) if all_emails else ''
+                df.at[index, 'error'] = DEFAULT_URL_SEPARATOR.join(errors) if errors else ''
+
+                # Save to CSV after each update
+                df.to_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR, index=False)
+
+                # Print the progress
+                print(f"Updated email {index + 1}/{total_records}")
+
+                time.sleep(0.2)  # Be polite and avoid being blocked
+
+        print(f"CSV file updated with emails: {CSV_FILE_NAME}")
+    except Exception as e:
+        print(f"An error occurred during email population: {e}")
+
 def main():
     # Initialize log file
     with open(LOG_FILE_NAME, 'w') as log_file:
@@ -115,6 +168,8 @@ def main():
         if step_1_generate_csv(excel_file, column_vat, column_company):
             input("Step 1 complete. Press Enter to proceed to step 2.")
             step_2_populate_website()
+            input("Step 2 complete. Press Enter to proceed to step 3.")
+            step_3_populate_email()
     else:
         print("CSV file already exists.")
         try:
@@ -122,8 +177,14 @@ def main():
             if df['website'].isnull().all() or (df['website'] == '').all():
                 input("No website data found. Press Enter to proceed to step 2.")
                 step_2_populate_website()
+                input("Step 2 complete. Press Enter to proceed to step 3.")
+                step_3_populate_email()
+            elif df['email'].isnull().all() or (df['email'] == '').all():
+                if (df['website'] != '').any():
+                    input("No email data found. Press Enter to proceed to step 3.")
+                    step_3_populate_email()
             else:
-                print("Website data already populated. No further steps required.")
+                print("Website and email data already populated. No further steps required.")
         except Exception as e:
             print(f"Error reading the CSV file: {e}")
 
