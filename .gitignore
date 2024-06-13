@@ -141,3 +141,5 @@ dmypy.json
 *.csv
 *.tsv
 *.log
+
+trash

@@ -4,6 +4,7 @@ import sys
 import time
 import re
 import requests
+from urllib.parse import urlparse
 from duckduckgo_search import DDGS
 
 # Define default values
@@ -11,7 +12,7 @@ DEFAULT_COLUMN_VAT = "Codice Fiscale"
 DEFAULT_COLUMN_COMPANY = "Denominazione Azienda"
 DEFAULT_FIELD_SEPARATOR = "|"
 DEFAULT_URL_SEPARATOR = ";"
-CSV_FILE_NAME = "bizlist.csv"
+MAX_RECORDS = 8000
 SCRIPT_NAME = os.path.splitext(os.path.basename(sys.argv[0]))[0]
 LOG_FILE_NAME = f"{SCRIPT_NAME}.log"
 DEBUG_MODE = False  # Set to True to skip actual searches
@@ -21,10 +22,9 @@ def get_user_input(prompt, default_value):
     user_input = input(f"{prompt} [{default_value}]: ")
     return user_input if user_input else default_value
 
-def list_excel_files():
-    """List all Excel files in the current directory."""
-    excel_files = [f for f in os.listdir() if f.endswith('.xls') or f.endswith('.xlsx')]
-    return excel_files
+def list_files(extension):
+    """List all files in the current directory with the given extension."""
+    return [f for f in os.listdir() if f.endswith(extension)]
 
 def duckduckgo_search(search_term):
     """Search for a term using DuckDuckGo and return the first 3 URLs."""
@@ -43,7 +43,7 @@ def extract_emails(url):
         if response.status_code == 200:
             page_content = response.text
             emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", page_content)
-            return emails
+            return list(set(emails))  # Return unique emails
         else:
             print(f"Failed to retrieve the page: {url}")
             return []
@@ -51,9 +51,15 @@ def extract_emails(url):
         print(f"An error occurred while fetching the URL {url}: {e}")
         return []
 
+def get_root_url(url):
+    """Get the root URL from a given URL."""
+    parsed_url = urlparse(url)
+    root_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
+    return root_url
+
 def step_1_generate_csv():
     """Generate a CSV file from the given Excel file."""
-    excel_files = list_excel_files()
+    excel_files = list_files('.xls') + list_files('.xlsx')
     if not excel_files:
         print("No Excel files found in the current directory.")
         return False
@@ -72,6 +78,7 @@ def step_1_generate_csv():
         return False
     
     excel_file = excel_files[int(file_choice) - 1]
+    csv_file_name = os.path.splitext(excel_file)[0] + '.csv'
     column_vat = get_user_input("Enter the name of the VAT column", DEFAULT_COLUMN_VAT)
     column_company = get_user_input("Enter the name of the Company column", DEFAULT_COLUMN_COMPANY)
 
@@ -101,8 +108,8 @@ def step_1_generate_csv():
     extracted_df = extracted_df.astype({"website": str, "email": str, "error": str})
 
     try:
-        extracted_df.to_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR, index=False)
-        print(f"CSV file created: {CSV_FILE_NAME}")
+        extracted_df.to_csv(csv_file_name, sep=DEFAULT_FIELD_SEPARATOR, index=False)
+        print(f"CSV file created: {csv_file_name}")
         return True
     except Exception as e:
         print(f"Error saving the CSV file: {e}")
@@ -110,7 +117,26 @@ def step_1_generate_csv():
 
 def step_2_populate_website():
     """Populate the website column in the CSV file."""
-    csv_file = get_user_input("Enter the path to the CSV file", CSV_FILE_NAME)
+    csv_files = list_files('.csv')
+    if not csv_files:
+        print("No CSV files found in the current directory.")
+        return False
+
+    print("Select a CSV file to use:")
+    for idx, file in enumerate(csv_files, 1):
+        print(f"{idx}: {file}")
+    print("Q: Exit")
+
+    file_choice = input("Enter the number of the file to use or Q to exit: ").strip()
+    if file_choice.lower() == 'q':
+        print("Exiting.")
+        return
+    if not file_choice.isdigit() or int(file_choice) < 1 or int(file_choice) > len(csv_files):
+        print("Invalid choice.")
+        return False
+
+    csv_file = csv_files[int(file_choice) - 1]
+    
     try:
         df = pd.read_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR)
         
@@ -121,7 +147,7 @@ def step_2_populate_website():
         for index, row in df.iterrows():
             company_name = row[DEFAULT_COLUMN_COMPANY]
             vat_code = row[DEFAULT_COLUMN_VAT]
-            search_term = f"{company_name} {vat_code}"
+            search_term = f"{company_name} {vat_code} -\"www.ufficiocamerale.it\""
             print(f"Searching {index + 1}/{total_records}: {search_term}")
             urls = duckduckgo_search(search_term)
             df.at[index, 'website'] = DEFAULT_URL_SEPARATOR.join(urls)
@@ -136,7 +162,26 @@ def step_2_populate_website():
 
 def step_3_populate_email():
     """Populate the email column in the CSV file."""
-    csv_file = get_user_input("Enter the path to the CSV file", CSV_FILE_NAME)
+    csv_files = list_files('.csv')
+    if not csv_files:
+        print("No CSV files found in the current directory.")
+        return False
+
+    print("Select a CSV file to use:")
+    for idx, file in enumerate(csv_files, 1):
+        print(f"{idx}: {file}")
+    print("Q: Exit")
+
+    file_choice = input("Enter the number of the file to use or Q to exit: ").strip()
+    if file_choice.lower() == 'q':
+        print("Exiting.")
+        return
+    if not file_choice.isdigit() or int(file_choice) < 1 or int(file_choice) > len(csv_files):
+        print("Invalid choice.")
+        return False
+
+    csv_file = csv_files[int(file_choice) - 1]
+
     try:
         df = pd.read_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR)
         
@@ -147,14 +192,22 @@ def step_3_populate_email():
         for index, row in df.iterrows():
             if row['website']:
                 urls = row['website'].split(DEFAULT_URL_SEPARATOR)
-                all_emails = []
+                all_emails = set()  # Use a set to avoid duplicates
                 errors = []
+
                 for url in urls:
                     emails = extract_emails(url)
                     if emails:
-                        all_emails.extend(emails)
+                        all_emails.update(emails)
+                        break  # Stop after finding emails at the first URL
                     else:
-                        errors.append(f"home page Timeout")
+                        root_url = get_root_url(url)
+                        root_emails = extract_emails(root_url)
+                        if root_emails:
+                            all_emails.update(root_emails)
+                            break
+                        else:
+                            errors.append(f"No emails found at {url}")
 
                 df.at[index, 'email'] = DEFAULT_URL_SEPARATOR.join(all_emails) if all_emails else ''
                 df.at[index, 'error'] = DEFAULT_URL_SEPARATOR.join(errors) if errors else ''
