@@ -131,7 +131,7 @@ def step_3_populate_email():
                 # Save to CSV after each update
                 df.to_csv(CSV_FILE_NAME, sep=DEFAULT_FIELD_SEPARATOR, index=False)
                 print(f"Updated email {index + 1}/{total_records}")
-                time.sleep(0.2)  # Be polite and avoid being blocked
+                time.sleep(0.2)  
 
         print(f"CSV file updated with emails: {CSV_FILE_NAME}")
     except Exception as e:
