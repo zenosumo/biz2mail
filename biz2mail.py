@@ -158,8 +158,8 @@ def step_2_populate_website():
 
         total_records = len(df)
         for index, row in df.iterrows():
-            # if row['website'].strip():  # Skip records with existing websites
-            #     continue
+            if row['website'].strip():  # Skip records with existing websites
+                continue
             company_name = row[DEFAULT_COLUMN_COMPANY]
             vat_code = row[DEFAULT_COLUMN_VAT]
             search_term = f"{company_name} {vat_code} -\"www.ufficiocamerale.it\""
@@ -206,6 +206,8 @@ def step_3_populate_email():
 
         total_records = len(df)
         for index, row in df.iterrows():
+            if row['email'].strip() or row['error'].strip():  # Skip records with existing emails or errors
+                continue
             if row['website']:
                 urls = row['website'].split(DEFAULT_URL_SEPARATOR)
                 all_emails = set()  # Use a set to avoid duplicates
@@ -223,7 +225,7 @@ def step_3_populate_email():
                             all_emails.update(root_emails)
                             break
                         else:
-                            errors.append(f"No emails found at {url}")
+                            errors.append(f"No emails found")
 
                 df.at[index, 'email'] = DEFAULT_URL_SEPARATOR.join(all_emails) if all_emails else ''
                 df.at[index, 'error'] = DEFAULT_URL_SEPARATOR.join(errors) if errors else ''
@@ -239,8 +241,8 @@ def step_3_populate_email():
 
 def main():
     """Main function to control the workflow."""
-    with open(LOG_FILE_NAME, 'w') as log_file:
-        log_file.write("Debug Log\n")
+    # with open(LOG_FILE_NAME, 'w') as log_file:
+    #     log_file.write("Debug Log\n")
 
     print("Choose a step to run:")
     print("1: Generate CSV from Excel")
