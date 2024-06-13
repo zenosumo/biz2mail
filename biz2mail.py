@@ -27,7 +27,7 @@ def list_files(extension):
     return [f for f in os.listdir() if f.endswith(extension)]
 
 def duckduckgo_search(search_term):
-    """Search for a term using DuckDuckGo and return the first 3 URLs."""
+    """Search for a term using DuckDuckGo and return the first URL."""
     try:
         results = DDGS().text(search_term, max_results=1)
         urls = [result['href'] for result in results if 'href' in result]
@@ -109,16 +109,25 @@ def step_1_generate_csv():
 
     # Split into multiple CSV files if records exceed MAX_RECORDS
     total_records = len(extracted_df)
-    for i in range(0, total_records, MAX_RECORDS):
-        part_df = extracted_df.iloc[i:i+MAX_RECORDS]
-        part_number = (i // MAX_RECORDS) + 1
-        csv_file_name = f"{base_csv_name}-{part_number:03}.csv"
+    if total_records <= MAX_RECORDS:
+        csv_file_name = f"{base_csv_name}.csv"
         try:
-            part_df.to_csv(csv_file_name, sep=DEFAULT_FIELD_SEPARATOR, index=False)
+            extracted_df.to_csv(csv_file_name, sep=DEFAULT_FIELD_SEPARATOR, index=False)
             print(f"CSV file created: {csv_file_name}")
         except Exception as e:
             print(f"Error saving the CSV file: {e}")
             return False
+    else:
+        for i in range(0, total_records, MAX_RECORDS):
+            part_df = extracted_df.iloc[i:i+MAX_RECORDS]
+            part_number = (i // MAX_RECORDS) + 1
+            csv_file_name = f"{base_csv_name}-{part_number:03}.csv"
+            try:
+                part_df.to_csv(csv_file_name, sep=DEFAULT_FIELD_SEPARATOR, index=False)
+                print(f"CSV file created: {csv_file_name}")
+            except Exception as e:
+                print(f"Error saving the CSV file: {e}")
+                return False
 
     return True
 
@@ -152,12 +161,18 @@ def step_2_populate_website():
         
         total_records = len(df)
         for index, row in df.iterrows():
+            # if row['website'].strip():  # Skip records with existing websites
+            #     continue
             company_name = row[DEFAULT_COLUMN_COMPANY]
             vat_code = row[DEFAULT_COLUMN_VAT]
             search_term = f"{company_name} {vat_code} -\"www.ufficiocamerale.it\""
-            print(f"Searching {index + 1}/{total_records}: {search_term}")
+            print(f"Searching {index + 1}/{total_records}: {company_name}")
             urls = duckduckgo_search(search_term)
-            df.at[index, 'website'] = DEFAULT_URL_SEPARATOR.join(urls)
+            if urls:
+                df.at[index, 'website'] = DEFAULT_URL_SEPARATOR.join(urls)
+            else:
+                df.at[index, 'website'] = ""
+                df.at[index, 'error'] = "No website found"
 
             # Save to CSV after each update
             df.to_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR, index=False)
