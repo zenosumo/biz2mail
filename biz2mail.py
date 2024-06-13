@@ -78,7 +78,7 @@ def step_1_generate_csv():
         return False
     
     excel_file = excel_files[int(file_choice) - 1]
-    csv_file_name = os.path.splitext(excel_file)[0] + '.csv'
+    base_csv_name = os.path.splitext(excel_file)[0]
     column_vat = get_user_input("Enter the name of the VAT column", DEFAULT_COLUMN_VAT)
     column_company = get_user_input("Enter the name of the Company column", DEFAULT_COLUMN_COMPANY)
 
@@ -107,13 +107,20 @@ def step_1_generate_csv():
     # Ensure the 'website', 'email', and 'error' columns are explicitly set to string type
     extracted_df = extracted_df.astype({"website": str, "email": str, "error": str})
 
-    try:
-        extracted_df.to_csv(csv_file_name, sep=DEFAULT_FIELD_SEPARATOR, index=False)
-        print(f"CSV file created: {csv_file_name}")
-        return True
-    except Exception as e:
-        print(f"Error saving the CSV file: {e}")
-        return False
+    # Split into multiple CSV files if records exceed MAX_RECORDS
+    total_records = len(extracted_df)
+    for i in range(0, total_records, MAX_RECORDS):
+        part_df = extracted_df.iloc[i:i+MAX_RECORDS]
+        part_number = (i // MAX_RECORDS) + 1
+        csv_file_name = f"{base_csv_name}-{part_number:03}.csv"
+        try:
+            part_df.to_csv(csv_file_name, sep=DEFAULT_FIELD_SEPARATOR, index=False)
+            print(f"CSV file created: {csv_file_name}")
+        except Exception as e:
+            print(f"Error saving the CSV file: {e}")
+            return False
+
+    return True
 
 def step_2_populate_website():
     """Populate the website column in the CSV file."""
