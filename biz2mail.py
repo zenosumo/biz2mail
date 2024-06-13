@@ -154,11 +154,8 @@ def step_2_populate_website():
     csv_file = csv_files[int(file_choice) - 1]
     
     try:
-        df = pd.read_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR)
-        
-        # Ensure all columns are treated as strings
-        df = df.astype(str).fillna('')
-        
+        df = pd.read_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR, dtype=str).fillna('')
+
         total_records = len(df)
         for index, row in df.iterrows():
             # if row['website'].strip():  # Skip records with existing websites
@@ -205,10 +202,7 @@ def step_3_populate_email():
     csv_file = csv_files[int(file_choice) - 1]
 
     try:
-        df = pd.read_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR)
-        
-        # Ensure all columns are treated as strings
-        df = df.astype(str).fillna('')
+        df = pd.read_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR, dtype=str).fillna('')
 
         total_records = len(df)
         for index, row in df.iterrows():
