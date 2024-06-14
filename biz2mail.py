@@ -22,8 +22,8 @@ def get_user_input(prompt, default_value):
     return user_input if user_input else default_value
 
 def list_files(extension):
-    """List all files in the current directory with the given extension."""
-    return [f for f in os.listdir() if f.endswith(extension)]
+    """List all files in the current directory with the given extension, excluding resolved files."""
+    return [f for f in os.listdir() if f.endswith(extension) and "-resolved" not in f]
 
 def duckduckgo_search(search_term):
     """Search for a term using DuckDuckGo and return the first URL."""
