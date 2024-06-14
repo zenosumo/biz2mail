@@ -1,66 +1,104 @@
 
-# Excel to CSV Extractor with Web Data Enhancement
+# biz2mail
 
-### Purpose
-The "Excel to CSV Extractor with Web Data Enhancement" is an enhanced Python-based tool designed not only to extract specific columns from an Excel file into a CSV file but also to enrich the CSV with web-scraped data such as websites and emails of the companies listed. This tool is ideal for users requiring comprehensive data assembly from various sources into a manageable format.
+## Descrizione
+`biz2mail` è uno script Python progettato per elaborare file Excel contenenti dati aziendali e popolare le colonne "website" ed "email" utilizzando ricerche su DuckDuckGo e analisi del contenuto delle pagine web.
 
-### How It Works
-The tool operates in three main steps:
-1. **CSV Generation**: Takes an Excel file as input, extracts specified columns (default: "Codice Fiscale" and "Denominazione Azienda"), and generates a CSV file. These columns has to be unique.
-2. **Website Data Enrichment**: Uses DuckDuckGo search to retrieve the first three URLs related to the company and appends these URLs to the CSV.
-3. **Email Data Enrichment**: Extracts emails from the URLs and appends this data to the CSV.
+## Requisiti
+- Python 3.x
+- Librerie Python: pandas, requests, openpyxl, xlrd, re, urllib.parse, duckduckgo_search
 
-The script ensures robust error handling for missing files, columns, and web scraping anomalies.
+Per installare le librerie necessarie, eseguire:
+```bash
+pip install pandas requests openpyxl xlrd duckduckgo_search
+```
 
-## Installation
+## Funzionalità
+1. Genera un file CSV da un file Excel.
+2. Popola le colonne "website" ed "email" in un file CSV.
+3. Salva i record trovati con successo in un file separato con suffisso `-resolved`.
 
-### Prerequisites
-- Python installed on your system.
-- Required libraries: `pandas`, `openpyxl`, `xlrd`, `requests`, `duckduckgo_search`.
+## Utilizzo
 
-### Setup Instructions
+### Passo 1: Genera CSV da Excel
+1. Esegui lo script:
+    ```bash
+    python biz2mail.py
+    ```
+2. Seleziona l'opzione "1" per generare il CSV da un file Excel.
+3. Verrà richiesta la selezione di un file Excel dalla directory corrente. Scegli il file inserendo il numero corrispondente.
+4. Specifica i nomi delle colonne per il Codice Fiscale e la Denominazione Azienda. Premere Invio per accettare i valori predefiniti.
 
-1. **Install Python**: Download from the [official Python website](https://www.python.org/downloads/).
+Il CSV generato avrà le colonne "website", "email" e "error" vuote.
 
-2. **Set Up Virtual Environment**:
-   ```shell
-   python -m venv bizenv
-   source bizenv/bin/activate  # Unix/MacOS
-   bizenv\Scripts\activate  # Windows
-   ```
+### Passo 2: Popola dati di "website" ed "email" nel CSV
+1. Esegui lo script:
+    ```bash
+    python biz2mail.py
+    ```
+2. Seleziona l'opzione "2" per popolare le colonne "website" ed "email" nel CSV.
+3. Verrà richiesta la selezione di un file CSV dalla directory corrente. Scegli il file inserendo il numero corrispondente. I file con suffisso `-resolved` saranno esclusi dalla lista.
+4. Lo script elaborerà ogni record del CSV:
+    - Se il campo "error" è valorizzato, il record sarà saltato.
+    - Se il campo "website" è vuoto, verrà effettuata una ricerca su DuckDuckGo utilizzando il nome dell'azienda e il Codice Fiscale.
+    - Se un sito web viene trovato, verrà popolato il campo "website".
+    - Se il sito web è valido, verranno cercate le email nel sito e nel root del dominio.
+    - Le email trovate verranno aggiunte al campo "email".
+    - Se un timeout si verifica durante il recupero dell'URL, il campo "error" sarà impostato su "timeout".
+    - Se vengono trovati sia il sito web che l'email, il record sarà aggiunto al file `-resolved` e l'errore sarà impostato su "no".
 
-3. **Install Required Packages**:
-   ```shell
-   pip install pandas xlrd requests duckduckgo_search
-   ```
+### File generati
+- `filename.csv`: File CSV originale con i dati elaborati.
+- `filename-resolved.csv`: File CSV contenente solo i record per cui sono stati trovati sia il sito web che l'email.
 
-4. **Deactivate the Virtual Environment**:
-   ```shell
-   deactivate
-   ```
-
-## Usage
-
-### Inputs
-- **Excel File**: Path to the Excel file.
-- **Columns**: Names of the VAT and company columns (default settings provided).
-
-### Running the Script
-Navigate to the script directory and execute:
-```shell
+### Esempio di Esecuzione
+```bash
 python biz2mail.py
 ```
 
-Follow the prompts to input the Excel file path and column names. The script will first generate a CSV file and then proceed to enrich it with websites and emails fetched online.
-
-### Example Usage
-```shell
-Enter the path to the Excel file [bizlist.xls]: 
-Enter the name of the VAT column [Codice Fiscale]: 
-Enter the name of the Company column [Denominazione Azienda]:
+#### Output:
+```
+Scegli un'operazione da eseguire:
+1: Genera CSV da Excel
+2: Popola dati di "website" ed "email" nel CSV
+Q: Esci
+Inserisci la tua scelta (1/2/Q): 1
+Seleziona un file Excel da usare:
+1: aziende.xlsx
+Q: Esci
+Inserisci il numero del file da usare o Q per uscire: 1
+Inserisci il nome della colonna per il Codice Fiscale [Codice Fiscale]: 
+Inserisci il nome della colonna per la Denominazione Azienda [Denominazione Azienda]: 
+CSV file created: aziende.csv
 ```
 
-## Troubleshooting
-- Ensure all dependencies are correctly installed.
+#### Popolazione di "website" ed "email":
+```bash
+python biz2mail.py
+```
 
-The detailed error logging in the script will assist in troubleshooting issues related to file reading and web scraping.
+#### Output:
+```
+Scegli un'operazione da eseguire:
+1: Genera CSV da Excel
+2: Popola dati di "website" ed "email" nel CSV
+Q: Esci
+Inserisci la tua scelta (1/2/Q): 2
+Seleziona un file CSV da usare:
+1: aziende.csv
+Q: Esci
+Inserisci il numero del file da usare o Q per uscire: 1
+Searching 1/100: Azienda ABC
+...
+CSV files updated: aziende.csv and aziende-resolved.csv
+```
+
+### Log
+Un file di log (`biz2mail.log`) sarà creato nella directory corrente contenente i dettagli delle operazioni eseguite e gli eventuali errori riscontrati.
+
+## Note
+- Assicurarsi di avere una connessione internet attiva per eseguire le ricerche su DuckDuckGo.
+- Lo script gestisce eventuali timeout e errori HTTP durante il recupero dei dati dai siti web.
+
+## Contatti
+Per qualsiasi domanda o problema, contattare [il tuo indirizzo email].
