@@ -139,15 +139,9 @@ def populate_website_email():
         return False
 
     csv_file = csv_files[int(file_choice) - 1]
-    resolved_file = f"{os.path.splitext(csv_file)[0]}-resolved.csv"
     
     try:
         df = pd.read_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR, dtype=str).fillna('')
-        
-        if os.path.exists(resolved_file):
-            df_resolved = pd.read_csv(resolved_file, sep=DEFAULT_FIELD_SEPARATOR, dtype=str).fillna('')
-        else:
-            df_resolved = pd.DataFrame(columns=df.columns)  # Create an empty DataFrame for resolved records
 
         total_records = len(df)
         for index, row in df.iterrows():
@@ -194,20 +188,13 @@ def populate_website_email():
                 df.at[index, 'email'] = DEFAULT_URL_SEPARATOR.join(all_emails) if all_emails else ''
                 if not all_emails:
                     df.at[index, 'error'] = DEFAULT_URL_SEPARATOR.join(errors) if errors else "No emails found"
-                else:
-                    df.at[index, 'error'] = "no"
-
-                # Save the record to the resolve file if both website and email are found
-                if df.at[index, 'website'].strip() and df.at[index, 'email'].strip():
-                    df_resolved = pd.concat([df_resolved, df.iloc[[index]]]).drop_duplicates()
 
                 # Save to CSV after each update
                 df.to_csv(csv_file, sep=DEFAULT_FIELD_SEPARATOR, index=False)
-                df_resolved.to_csv(resolved_file, sep=DEFAULT_FIELD_SEPARATOR, index=False)
                 print(f"Updated record {index + 1}/{total_records}")
                 time.sleep(1)  # Be polite and avoid being blocked
 
-        print(f"CSV files updated: {csv_file} and {resolved_file}")
+        print(f"CSV file updated with websites and emails: {csv_file}")
     except Exception as e:
         print(f"An error occurred during website and email population: {e}")
 
