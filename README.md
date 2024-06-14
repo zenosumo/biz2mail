@@ -8,10 +8,32 @@
 - Python 3.x
 - Librerie Python: pandas, requests, openpyxl, xlrd, re, urllib.parse, duckduckgo_search
 
-Per installare le librerie necessarie, eseguire:
-```bash
-pip install pandas requests openpyxl xlrd duckduckgo_search
-```
+## Installazione delle Dipendenze
+
+### Creare e Attivare un Ambiente Virtuale
+1. Creare un ambiente virtuale:
+    ```bash
+    python -m venv bizenv
+    ```
+2. Attivare l'ambiente virtuale:
+    - Su Windows:
+        ```bash
+        .\bizenv\Scripts\activate
+        ```
+    - Su macOS e Linux:
+        ```bash
+        source bizenv/bin/activate
+        ```
+
+3. Installare le librerie necessarie:
+    ```bash
+    pip install pandas requests openpyxl xlrd duckduckgo_search
+    ```
+
+4. Per disattivare l'ambiente virtuale:
+    ```bash
+    deactivate
+    ```
 
 ## Funzionalità
 1. Genera un file CSV da un file Excel.
