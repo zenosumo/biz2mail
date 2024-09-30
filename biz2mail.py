@@ -53,6 +53,22 @@ def extract_emails(url):
         print(f"An error occurred while fetching the URL {url}: {e}")
         return []
 
+def extract_phone_numbers(text):
+    # Updated regular expression:
+    # \+? - optionally matches a leading "+"
+    # \(?\d{1,3}\)? - optionally matches area code in parentheses
+    # [\d\s\-\.\(\)]{6,15} - matches the remaining part of the number, allowing common delimiters
+    phone_pattern = r"(\+?\(?\d{1,3}\)?[\d\s\-\.\(\)]{7,15})"
+    
+    # Find all matches based on the pattern
+    matches = re.findall(phone_pattern, text)
+    
+    # Clean up each phone number to only include digits, brackets, and plus sign
+    cleaned_numbers = [''.join(re.findall(r'[\d\(\)\+]', match)) for match in matches]
+    
+    # Join the cleaned numbers with ";"
+    return ";".join(cleaned_numbers)
+
 def get_root_url(url):
     """Get the root URL from a given URL."""
     parsed_url = urlparse(url)
